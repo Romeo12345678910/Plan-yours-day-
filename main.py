@@ -3,6 +3,18 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Mess
 import calendar
 from datetime import datetime
 import asyncio
+from flask import Flask
+from threading import Thread
+
+# Inizializzazione di Flask
+app = Flask(__name__)
+
+@app.route("/")
+def home():
+    return "Bot Telegram con Flask è attivo!"
+
+def run_flask():
+    app.run(host="0.0.0.0", port=8080)
 
 giorni_settimana_ita = ["Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato", "Domenica"]
 mesi_ita = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"]
@@ -222,19 +234,23 @@ async def torna_indietro(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await mostra_giorni(update, context, edit=True)
 
 def main():
-    app = Application.builder().token(BOT_TOKEN).build()
+    app_telegram = Application.builder().token(BOT_TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(cambia_mese, pattern="mese_"))
-    app.add_handler(CallbackQueryHandler(seleziona_giorno, pattern="giorno_"))
-    app.add_handler(CallbackQueryHandler(aggiungi, pattern="aggiungi"))
-    app.add_handler(CallbackQueryHandler(modifica_programma, pattern="modifica"))
-    app.add_handler(CallbackQueryHandler(rimuovi_programma, pattern="rimuovi_"))
-    app.add_handler(CallbackQueryHandler(riepilogo_programmi, pattern="riepilogo_programmi"))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, ricevi_programma))
-    app.add_handler(CallbackQueryHandler(torna_indietro, pattern="indietro"))
+    app_telegram.add_handler(CommandHandler("start", start))
+    app_telegram.add_handler(CallbackQueryHandler(cambia_mese, pattern="mese_"))
+    app_telegram.add_handler(CallbackQueryHandler(seleziona_giorno, pattern="giorno_"))
+    app_telegram.add_handler(CallbackQueryHandler(aggiungi, pattern="aggiungi"))
+    app_telegram.add_handler(CallbackQueryHandler(modifica_programma, pattern="modifica"))
+    app_telegram.add_handler(CallbackQueryHandler(rimuovi_programma, pattern="rimuovi_"))
+    app_telegram.add_handler(CallbackQueryHandler(riepilogo_programmi, pattern="riepilogo_programmi"))
+    app_telegram.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, ricevi_programma))
+    app_telegram.add_handler(CallbackQueryHandler(torna_indietro, pattern="indietro"))
 
-    app.run_polling()
+    # Avvia il server Flask in un thread separato
+    Thread(target=run_flask, daemon=True).start()
+
+    # Avvia il bot
+    app_telegram.run_polling()
 
 if __name__ == "__main__":
     main()
